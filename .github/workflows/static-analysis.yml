@@ -1,0 +1,9 @@
+name: static-analysis
+
+on: push
+
+jobs:
+  static-analysis:
+    uses: quartercastle/github-action/.github/workflows/go-static-analysis.yml@main
+    with:
+      go: 1.19
