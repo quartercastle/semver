@@ -208,23 +208,29 @@ func compareFuncDecl(a, b *ast.FuncDecl) Diff {
 	if a == nil {
 		b.Body = nil
 		return diff.Add(Change{
-			Type:   Minor,
-			Reason: "an exported function has been added",
-			Latest: b,
+			Type:     Minor,
+			Reason:   "function has been added",
+			Previous: b,
 		})
 	}
 
 	if b == nil {
 		a.Body = nil
 		return diff.Add(Change{
-			Type:     Minor,
-			Reason:   "an exported function has been added",
-			Previous: a,
+			Type:   Major,
+			Reason: "function has been removed",
+			Latest: a,
 		})
 	}
 
-	if !(equalIdent(a.Name, b.Name) && equalFieldList(a.Recv, b.Recv)) {
-		return diff
+	if !equalFieldList(a.Recv, b.Recv) {
+		a.Body, b.Body = nil, nil
+		return diff.Add(Change{
+			Type:     Major,
+			Reason:   "receiver type has changed",
+			Previous: a,
+			Latest:   b,
+		})
 	}
 
 	if !equalFuncType(a.Type, b.Type) {
@@ -244,31 +250,43 @@ func compareFuncs(previous, latest Node) Diff {
 	previousFuncs, latestFuncs := newFuncs(previous), newFuncs(latest)
 	diff := Diff{}
 
-	if len(latestFuncs) < len(previousFuncs) {
-		return diff.Add(Change{
-			Type:   Major,
-			Reason: "an exported function has been removed",
-		})
+	foundPrevious, foundLatest := map[*ast.FuncDecl]bool{}, map[*ast.FuncDecl]bool{}
+
+	for _, p := range previousFuncs {
+		foundPrevious[p] = false
+	}
+
+	for _, p := range latestFuncs {
+		foundLatest[p] = false
 	}
 
 	for i := range latestFuncs {
-		rest := 0
 		for j := range previousFuncs {
 			p, l := previousFuncs[j], latestFuncs[i]
-			if i >= len(previousFuncs) {
-				// an exported function has been added
-				diff = diff.Merge(compareFuncDecl(nil, l))
+
+			if foundPrevious[p] || foundLatest[l] {
 				break
 			}
 
-			diff = diff.Merge(compareFuncDecl(p, l))
-			rest++
-		}
-
-		if rest < i {
-			for j := range latestFuncs[rest:] {
-				diff = diff.Merge(compareFuncDecl(nil, latestFuncs[j]))
+			if d := diff.Merge(compareFuncDecl(p, l)); len(d) == 0 {
+				foundPrevious[p], foundLatest[l] = true, true
+			} else {
+				diff = d
 			}
+		}
+	}
+
+	for _, l := range latestFuncs {
+		if !foundLatest[l] {
+			// an exported function has been added
+			diff = diff.Merge(compareFuncDecl(nil, l))
+		}
+	}
+
+	for _, p := range previousFuncs {
+		if !foundPrevious[p] {
+			// an exported function has been removed
+			diff = diff.Merge(compareFuncDecl(p, nil))
 		}
 	}
 

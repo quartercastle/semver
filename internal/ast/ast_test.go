@@ -208,6 +208,78 @@ func TestCompare(t *testing.T) {
 			[]string{"func (Foo) bar()"},
 			Patch,
 		},
+		{
+			"change of receiver type",
+			[]string{"func (Bar) Foo()"},
+			[]string{"func (Foo) Foo()"},
+			Major,
+		},
+		{
+			"change of receiver variable",
+			[]string{"func (a Foo) Foo()"},
+			[]string{"func (b Foo) Foo()"},
+			Patch,
+		},
+		{
+			"addition of receiver function",
+			[]string{"func (Foo) Bar()"},
+			[]string{"func (Foo) Bar()", "func (Foo) Foo()"},
+			Minor,
+		},
+		{
+			"removal of receiver function",
+			[]string{"func (Foo) Bar()", "func (Foo) Foo()"},
+			[]string{"func (Foo) Bar()"},
+			Major,
+		},
+		{
+			"addition of exported function",
+			[]string{""},
+			[]string{"func Foo()"},
+			Minor,
+		},
+		{
+			"removal of exported function",
+			[]string{"func Foo()"},
+			[]string{""},
+			Major,
+		},
+		{
+			"typed paramterer argument",
+			[]string{"func Foo[A any](A)"},
+			[]string{"func Foo[A any](A)"},
+			Patch,
+		},
+		{
+			"addition of typed paramterer argument",
+			[]string{"func Foo[A any]() A"},
+			[]string{"func Foo[A, B any]() (A, B)"},
+			Major,
+		},
+		{
+			"removal of typed paramterer argument",
+			[]string{"func Foo[A, B any]() (A, B)"},
+			[]string{"func Foo[A any]() A "},
+			Major,
+		},
+		{
+			"typed paramterer return value",
+			[]string{"func Foo[A any]() A"},
+			[]string{"func Foo[A any]() A"},
+			Patch,
+		},
+		{
+			"addition of typed paramterer return value",
+			[]string{"func Foo[A any]() A"},
+			[]string{"func Foo[A, B any]() (A, B)"},
+			Major,
+		},
+		{
+			"removal of typed paramterer return value",
+			[]string{"func Foo[A, B any]() (A, B)"},
+			[]string{"func Foo[A any]() A"},
+			Major,
+		},
 	}
 
 	for _, c := range tc {
