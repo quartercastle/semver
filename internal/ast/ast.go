@@ -3,18 +3,59 @@ package ast
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
+	"reflect"
 )
 
 type Node = ast.Node
+type Package = ast.Package
 
-type Difference int
+type Change struct {
+	Type             Type
+	Reason           string
+	Previous, Latest Snippet
+}
 
-func (d Difference) String() string {
-	return difference[d]
+type Snippet struct{ Pos, End token.Pos }
+
+type Diff map[*Change]struct{}
+
+func (d Diff) Set(c Change) Diff {
+	if d == nil {
+		d = Diff{}
+	}
+	d[&c] = struct{}{}
+	return d
+}
+
+func (d Diff) Merge(q Diff) Diff {
+	if d == nil {
+		d = Diff{}
+	}
+	for k, v := range q {
+		d[k] = v
+	}
+	return d
+}
+
+func (d Diff) Type() Type {
+	diff := Patch
+	for change := range d {
+		if diff < change.Type {
+			diff = change.Type
+		}
+	}
+	return diff
+}
+
+type Type int
+
+func (t Type) String() string {
+	return types[t]
 }
 
 var (
-	difference = map[Difference]string{
+	types = map[Type]string{
 		None:  "NONE",
 		Patch: "PATCH",
 		Minor: "MINOR",
@@ -23,7 +64,7 @@ var (
 )
 
 const (
-	None Difference = iota
+	None Type = iota
 	Patch
 	Minor
 	Major
@@ -31,6 +72,11 @@ const (
 
 func newFuncs(node ast.Node) []*ast.FuncDecl {
 	result := []*ast.FuncDecl{}
+
+	if node == nil {
+		return nil
+	}
+
 	ast.Inspect(node, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.FuncDecl:
@@ -132,67 +178,83 @@ func equalField(a, b *ast.Field) bool {
 	return true
 }
 
-func compareFuncDecl(a, b *ast.FuncDecl) Difference {
-	diff := None
-
+func compareFuncDecl(diff Diff, a, b *ast.FuncDecl) Diff {
 	if !equalIdent(a.Name, b.Name) {
 		return diff
 	}
 
 	if !equalFuncType(a.Type, b.Type) {
-		return set(diff, Major)
+		return diff.Set(Change{
+			Type:     Major,
+			Reason:   "function signature has changed",
+			Previous: Snippet{a.Type.Pos(), a.Type.End()},
+			Latest:   Snippet{b.Type.Pos(), b.Type.End()},
+		})
 	}
 
 	return diff
 }
 
-func compareFuncs(previous, latest Node) Difference {
+func compareFuncs(diff Diff, previous, latest Node) Diff {
 	previousFuncs, latestFuncs := newFuncs(previous), newFuncs(latest)
-	diff := Patch
 
 	if len(latestFuncs) < len(previousFuncs) {
-		// a exported function has been removed
-		return Major
+		return diff.Set(Change{
+			Type:   Major,
+			Reason: "an exported function has been removed",
+		})
 	}
 
 	for i := range latestFuncs {
 		for j := range previousFuncs {
 			if i >= len(previousFuncs) {
 				// an exported function has been added
-				return set(diff, Minor)
+				return diff.Set(Change{
+					Type:   Minor,
+					Reason: "an exported function has been added",
+				})
 			}
 
-			diff = set(
-				diff,
-				compareFuncDecl(previousFuncs[j], latestFuncs[i]),
-			)
+			diff.Merge(compareFuncDecl(diff, previousFuncs[j], latestFuncs[i]))
 		}
 	}
 
 	return diff
 }
 
-type Comparator func(previous, latest Node) Difference
+type Comparator func(diff Diff, previous, latest Node) Diff
 
-func set(current, latest Difference) Difference {
-	if current < latest {
-		return latest
-	}
-	return current
-}
-
-func compose(previous, latest Node) func(comparators ...Comparator) Difference {
-	return func(comparators ...Comparator) Difference {
-		diff := None
+func compose(diff Diff, previous, latest Node) func(comparators ...Comparator) Diff {
+	return func(comparators ...Comparator) Diff {
 		for _, comparator := range comparators {
-			diff = set(diff, comparator(previous, latest))
+			diff.Merge(comparator(diff, previous, latest))
 		}
 		return diff
 	}
 }
 
-func Compare(previous, latest ast.Node) Difference {
-	return compose(previous, latest)(
+func Compare(previous, latest ast.Node) Diff {
+	diff := Diff{}
+
+	if (previous == nil || reflect.ValueOf(previous).IsNil()) && (latest == nil || reflect.ValueOf(latest).IsNil()) {
+		return diff
+	}
+
+	if (previous == nil || reflect.ValueOf(previous).IsNil()) && (latest != nil || !reflect.ValueOf(latest).IsNil()) {
+		return diff.Set(Change{
+			Type:   Major,
+			Reason: "removal of package",
+		})
+	}
+
+	if (previous != nil || !reflect.ValueOf(previous).IsNil()) && (latest == nil || reflect.ValueOf(latest).IsNil()) {
+		return diff.Set(Change{
+			Type:   Minor,
+			Reason: "addition of package",
+		})
+	}
+
+	return compose(diff, previous, latest)(
 		compareFuncs,
 	)
 }

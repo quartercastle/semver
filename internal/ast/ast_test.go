@@ -32,7 +32,7 @@ func TestCompare(t *testing.T) {
 	tc := []struct {
 		title            string
 		previous, latest []string
-		expected         Difference
+		expected         Type
 	}{
 		{
 			"No difference",
@@ -146,10 +146,10 @@ func TestCompare(t *testing.T) {
 				t.Error(err)
 			}
 
-			if actual := Compare(previous, latest); actual != c.expected {
+			if actual := Compare(previous, latest); actual.Type() != c.expected {
 				t.Errorf(
 					"expected difference of %s; got %s",
-					c.expected, actual,
+					c.expected, actual.Type(),
 				)
 			}
 		})
