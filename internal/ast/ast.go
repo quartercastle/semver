@@ -3,7 +3,6 @@ package ast
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
 	"reflect"
 )
 
@@ -13,34 +12,28 @@ type Package = ast.Package
 type Change struct {
 	Type             Type
 	Reason           string
-	Previous, Latest Snippet
+	Previous, Latest Node
 }
 
-type Snippet struct{ Pos, End token.Pos }
+type Diff []Change
 
-type Diff map[*Change]struct{}
-
-func (d Diff) Set(c Change) Diff {
+func (d Diff) Add(c ...Change) Diff {
 	if d == nil {
 		d = Diff{}
 	}
-	d[&c] = struct{}{}
-	return d
+	return append(d, c...)
 }
 
 func (d Diff) Merge(q Diff) Diff {
 	if d == nil {
 		d = Diff{}
 	}
-	for k, v := range q {
-		d[k] = v
-	}
-	return d
+	return append(d, q...)
 }
 
 func (d Diff) Type() Type {
 	diff := Patch
-	for change := range d {
+	for _, change := range d {
 		if diff < change.Type {
 			diff = change.Type
 		}
@@ -91,6 +84,10 @@ func newFuncs(node ast.Node) []*ast.FuncDecl {
 }
 
 func equalIdent(a, b *ast.Ident) bool {
+	if !equalObject(a.Obj, b.Obj) {
+		return false
+	}
+
 	return a.Name == b.Name
 }
 
@@ -152,20 +149,47 @@ func equalBasicLit(a, b *ast.BasicLit) bool {
 	return a.Kind == b.Kind && a.Value == b.Value
 }
 
+func equalObject(a, b *ast.Object) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if (a == nil && b != nil) || (a != nil && b == nil) {
+		return false
+	}
+
+	return a.Kind == b.Kind && a.Name == b.Name
+}
+
 func equalExpr(a, b ast.Expr) bool {
+	switch t := a.(type) {
+	case *ast.Ident:
+		if v, ok := b.(*ast.Ident); ok {
+			return equalIdent(t, v)
+		}
+	case *ast.Ellipsis:
+		if v, ok := b.(*ast.Ellipsis); ok {
+			return equalExpr(t.Elt, v.Elt)
+		}
+	}
+
 	return fmt.Sprint(a) == fmt.Sprint(b)
 }
 
 func equalField(a, b *ast.Field) bool {
-	/*if len(a.Names) != len(b.Names) {
+	if len(a.Names) != len(b.Names) {
 		return false
 	}
 
 	for i := range a.Names {
+		if a.Names[i].Obj.Kind == ast.Var {
+			continue
+		}
+
 		if !equalIdent(a.Names[i], b.Names[i]) {
 			return false
 		}
-	}*/
+	}
 
 	if !equalExpr(a.Type, b.Type) {
 		return false
@@ -178,56 +202,86 @@ func equalField(a, b *ast.Field) bool {
 	return true
 }
 
-func compareFuncDecl(diff Diff, a, b *ast.FuncDecl) Diff {
-	if !equalIdent(a.Name, b.Name) {
+func compareFuncDecl(a, b *ast.FuncDecl) Diff {
+	diff := Diff{}
+
+	if a == nil {
+		b.Body = nil
+		return diff.Add(Change{
+			Type:   Minor,
+			Reason: "an exported function has been added",
+			Latest: b,
+		})
+	}
+
+	if b == nil {
+		a.Body = nil
+		return diff.Add(Change{
+			Type:     Minor,
+			Reason:   "an exported function has been added",
+			Previous: a,
+		})
+	}
+
+	if !(equalIdent(a.Name, b.Name) && equalFieldList(a.Recv, b.Recv)) {
 		return diff
 	}
 
 	if !equalFuncType(a.Type, b.Type) {
-		return diff.Set(Change{
+		a.Body, b.Body = nil, nil
+		return diff.Add(Change{
 			Type:     Major,
 			Reason:   "function signature has changed",
-			Previous: Snippet{a.Type.Pos(), a.Type.End()},
-			Latest:   Snippet{b.Type.Pos(), b.Type.End()},
+			Previous: a,
+			Latest:   b,
 		})
 	}
 
 	return diff
 }
 
-func compareFuncs(diff Diff, previous, latest Node) Diff {
+func compareFuncs(previous, latest Node) Diff {
 	previousFuncs, latestFuncs := newFuncs(previous), newFuncs(latest)
+	diff := Diff{}
 
 	if len(latestFuncs) < len(previousFuncs) {
-		return diff.Set(Change{
+		return diff.Add(Change{
 			Type:   Major,
 			Reason: "an exported function has been removed",
 		})
 	}
 
 	for i := range latestFuncs {
+		rest := 0
 		for j := range previousFuncs {
+			p, l := previousFuncs[j], latestFuncs[i]
 			if i >= len(previousFuncs) {
 				// an exported function has been added
-				return diff.Set(Change{
-					Type:   Minor,
-					Reason: "an exported function has been added",
-				})
+				diff = diff.Merge(compareFuncDecl(nil, l))
+				break
 			}
 
-			diff.Merge(compareFuncDecl(diff, previousFuncs[j], latestFuncs[i]))
+			diff = diff.Merge(compareFuncDecl(p, l))
+			rest++
+		}
+
+		if rest < i {
+			for j := range latestFuncs[rest:] {
+				diff = diff.Merge(compareFuncDecl(nil, latestFuncs[j]))
+			}
 		}
 	}
 
 	return diff
 }
 
-type Comparator func(diff Diff, previous, latest Node) Diff
+type Comparator func(previous, latest Node) Diff
 
-func compose(diff Diff, previous, latest Node) func(comparators ...Comparator) Diff {
+func compose(previous, latest Node) func(comparators ...Comparator) Diff {
 	return func(comparators ...Comparator) Diff {
+		diff := Diff{}
 		for _, comparator := range comparators {
-			diff.Merge(comparator(diff, previous, latest))
+			diff = diff.Merge(comparator(previous, latest))
 		}
 		return diff
 	}
@@ -241,20 +295,20 @@ func Compare(previous, latest ast.Node) Diff {
 	}
 
 	if (previous == nil || reflect.ValueOf(previous).IsNil()) && (latest != nil || !reflect.ValueOf(latest).IsNil()) {
-		return diff.Set(Change{
+		return diff.Add(Change{
 			Type:   Major,
 			Reason: "removal of package",
 		})
 	}
 
 	if (previous != nil || !reflect.ValueOf(previous).IsNil()) && (latest == nil || reflect.ValueOf(latest).IsNil()) {
-		return diff.Set(Change{
+		return diff.Add(Change{
 			Type:   Minor,
 			Reason: "addition of package",
 		})
 	}
 
-	return compose(diff, previous, latest)(
+	return diff.Merge(compose(previous, latest)(
 		compareFuncs,
-	)
+	))
 }

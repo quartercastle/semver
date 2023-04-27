@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"go/parser"
+	"go/printer"
 	"go/token"
 	"io/fs"
 	"os"
+	"strings"
 
 	"github.com/quartercastle/semver/internal/ast"
 )
@@ -30,7 +32,9 @@ func main() {
 	}
 
 	a := token.NewFileSet()
-	previous, err := parser.ParseDir(a, args[0], func(fs.FileInfo) bool { return true }, 0)
+	previous, err := parser.ParseDir(a, args[0], func(f fs.FileInfo) bool {
+		return !strings.Contains(f.Name(), "_test.go")
+	}, 0)
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -38,7 +42,9 @@ func main() {
 	}
 
 	b := token.NewFileSet()
-	latest, err := parser.ParseDir(b, args[1], func(fs.FileInfo) bool { return true }, 0)
+	latest, err := parser.ParseDir(b, args[1], func(f fs.FileInfo) bool {
+		return !strings.Contains(f.Name(), "_test.go")
+	}, 0)
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -49,11 +55,19 @@ func main() {
 
 	var diff ast.Diff
 	for pkg := range all {
-		diff = ast.Compare(previous[pkg], latest[pkg])
+		diff = diff.Merge(ast.Compare(previous[pkg], latest[pkg]))
 	}
 
-	for change := range diff {
+	for _, change := range diff {
 		fmt.Printf("%s: %s\n", change.Type, change.Reason)
+		printer.Fprint(os.Stdout, token.NewFileSet(), change.Previous)
+		if change.Previous != nil {
+			fmt.Println()
+		}
+		printer.Fprint(os.Stdout, token.NewFileSet(), change.Latest)
+		fmt.Println()
+		fmt.Println()
 	}
+
 	fmt.Println(diff.Type())
 }

@@ -136,6 +136,78 @@ func TestCompare(t *testing.T) {
 			[]string{"func foo() string"},
 			Patch,
 		},
+		{
+			"variable argument names",
+			[]string{"func Foo(foo int) string"},
+			[]string{"func Foo(bar int) string"},
+			Patch,
+		},
+		{
+			"equal spread operator argument",
+			[]string{"func Foo(...int)"},
+			[]string{"func Foo(...int)"},
+			Patch,
+		},
+		{
+			"equal spread operator argument",
+			[]string{"func Foo(...int)"},
+			[]string{"func Foo(...int)"},
+			Patch,
+		},
+		{
+			"equal method",
+			[]string{"func (Foo) Bar()"},
+			[]string{"func (Foo) Bar()"},
+			Patch,
+		},
+		{
+			"addition of argument in exported method",
+			[]string{"func (Foo) Bar()"},
+			[]string{"func (Foo) Bar(string)"},
+			Major,
+		},
+		{
+			"removal of argument in exported method",
+			[]string{"func (Foo) Bar(string)"},
+			[]string{"func (Foo) Bar()"},
+			Major,
+		},
+		{
+			"addition of return value in exported method",
+			[]string{"func (Foo) Bar()"},
+			[]string{"func (Foo) Bar() string"},
+			Major,
+		},
+		{
+			"removal of return value in exported method",
+			[]string{"func (Foo) Bar() string"},
+			[]string{"func (Foo) Bar()"},
+			Major,
+		},
+		{
+			"addition of argument in internal method",
+			[]string{"func (Foo) bar()"},
+			[]string{"func (Foo) bar(string)"},
+			Patch,
+		},
+		{
+			"removal of argument in internal method",
+			[]string{"func (Foo) bar(string)"},
+			[]string{"func (Foo) bar()"},
+			Patch,
+		},
+		{
+			"addition of return value in internal method",
+			[]string{"func (Foo) bar()"},
+			[]string{"func (Foo) bar() string"},
+			Patch,
+		},
+		{
+			"removal of return value in internal method",
+			[]string{"func (Foo) bar() string"},
+			[]string{"func (Foo) bar()"},
+			Patch,
+		},
 	}
 
 	for _, c := range tc {
