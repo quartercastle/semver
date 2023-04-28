@@ -293,9 +293,9 @@ func TestCompare(t *testing.T) {
 			Major,
 		},
 		{
-			"case from github.com/adrianmo/go-nmea",
-			[]string{"func NewParser(s BaseSentence) *Parser"},
-			[]string{"func NewParser(s BaseSentence) *Parser"},
+			"changing internal receiver type to exported",
+			[]string{"func (*foo) Bar()"},
+			[]string{"func (*Foo) Bar()"},
 			Patch,
 		},
 	}

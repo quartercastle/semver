@@ -193,7 +193,6 @@ func equalExpr(a, b ast.Expr) bool {
 			return equalExpr(t.Elt, v.Elt)
 		}
 	}
-	fmt.Printf("%#v", a)
 	return fmt.Sprint(a) == fmt.Sprint(b)
 }
 
