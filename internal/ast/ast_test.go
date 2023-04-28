@@ -209,6 +209,18 @@ func TestCompare(t *testing.T) {
 			Patch,
 		},
 		{
+			"receiver concrete type",
+			[]string{"func (Foo) Foo()"},
+			[]string{"func (Foo) Foo()"},
+			Patch,
+		},
+		{
+			"receiver pointer type",
+			[]string{"func (*Foo) Foo()"},
+			[]string{"func (*Foo) Foo()"},
+			Patch,
+		},
+		{
 			"change of receiver type",
 			[]string{"func (Bar) Foo()"},
 			[]string{"func (Foo) Foo()"},
@@ -279,6 +291,12 @@ func TestCompare(t *testing.T) {
 			[]string{"func Foo[A, B any]() (A, B)"},
 			[]string{"func Foo[A any]() A"},
 			Major,
+		},
+		{
+			"case from github.com/adrianmo/go-nmea",
+			[]string{"func NewParser(s BaseSentence) *Parser"},
+			[]string{"func NewParser(s BaseSentence) *Parser"},
+			Patch,
 		},
 	}
 

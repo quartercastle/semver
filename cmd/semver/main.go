@@ -66,7 +66,9 @@ func main() {
 		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Latest)
 		fmt.Println()
-		fmt.Println()
+		if change.Latest != nil {
+			fmt.Println()
+		}
 	}
 
 	fmt.Println(diff.Type())

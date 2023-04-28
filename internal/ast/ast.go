@@ -73,6 +73,19 @@ func newFuncs(node ast.Node) []*ast.FuncDecl {
 	ast.Inspect(node, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.FuncDecl:
+			/*if x.Recv != nil {
+				return false
+				if len(x.Recv.List) == 0 {
+					return false
+				}
+				if len(x.Recv.List[0].Names) == 0 {
+					return false
+				}
+				if !ast.IsExported(x.Recv.List[0].Names[0].Name) {
+					return false
+				}
+			}*/
+
 			if !ast.IsExported(x.Name.Name) {
 				return true
 			}
@@ -171,13 +184,21 @@ func equalExpr(a, b ast.Expr) bool {
 		if v, ok := b.(*ast.Ellipsis); ok {
 			return equalExpr(t.Elt, v.Elt)
 		}
+	case *ast.StarExpr:
+		if v, ok := b.(*ast.StarExpr); ok {
+			return equalExpr(t.X, v.X)
+		}
+	case *ast.ArrayType:
+		if v, ok := b.(*ast.ArrayType); ok {
+			return equalExpr(t.Elt, v.Elt)
+		}
 	}
-
+	fmt.Printf("%#v", a)
 	return fmt.Sprint(a) == fmt.Sprint(b)
 }
 
 func equalField(a, b *ast.Field) bool {
-	if len(a.Names) != len(b.Names) {
+	/*if len(a.Names) != len(b.Names) {
 		return false
 	}
 
@@ -189,7 +210,7 @@ func equalField(a, b *ast.Field) bool {
 		if !equalIdent(a.Names[i], b.Names[i]) {
 			return false
 		}
-	}
+	}*/
 
 	if !equalExpr(a.Type, b.Type) {
 		return false
@@ -223,16 +244,6 @@ func compareFuncDecl(a, b *ast.FuncDecl) Diff {
 		})
 	}
 
-	if equalIdent(a.Name, b.Name) && !equalFieldList(a.Recv, b.Recv) {
-		a.Body, b.Body = nil, nil
-		return diff.Add(Change{
-			Type:     Major,
-			Reason:   "receiver type has changed",
-			Previous: a,
-			Latest:   b,
-		})
-	}
-
 	if !equalFuncType(a.Type, b.Type) {
 		a.Body, b.Body = nil, nil
 		return diff.Add(Change{
@@ -246,42 +257,38 @@ func compareFuncDecl(a, b *ast.FuncDecl) Diff {
 	return diff
 }
 
-func compareFuncs(previous, latest Node) Diff {
-	previousFuncs, latestFuncs := newFuncs(previous), newFuncs(latest)
+func compareFuncs(a, b Node) Diff {
+	previous, latest := newFuncs(a), newFuncs(b)
 	diff := Diff{}
 
-	matchPrevious := map[*ast.FuncDecl]bool{}
+	match := [][2]*ast.FuncDecl{}
 
-	for _, p := range previousFuncs {
-		matchPrevious[p] = false
+	for _, p := range previous {
+		match = append(match, [2]*ast.FuncDecl{p})
 	}
 
-	for i := range latestFuncs {
-		for j := range previousFuncs {
-			p, l := previousFuncs[j], latestFuncs[i]
+	for _, l := range latest {
+		var found bool
+		for j, m := range match {
+			p := m[0]
 
-			if matchPrevious[p] {
+			if p == nil {
 				break
 			}
 
-			if i >= len(previousFuncs) {
-				// an exported function has been added
-				return diff.Merge(compareFuncDecl(nil, l))
-			}
-
 			if equalIdent(p.Name, l.Name) && equalFieldList(p.Recv, l.Recv) {
-				matchPrevious[p] = true
+				match[j][1] = l
+				found = true
 			}
-
-			diff = diff.Merge(compareFuncDecl(p, l))
+		}
+		if !found {
+			match = append(match, [2]*ast.FuncDecl{nil, l})
 		}
 	}
 
-	for _, p := range previousFuncs {
-		if !matchPrevious[p] {
-			// an exported function has been removed
-			return diff.Merge(compareFuncDecl(p, nil))
-		}
+	for _, m := range match {
+		p, l := m[0], m[1]
+		diff = diff.Merge(compareFuncDecl(p, l))
 	}
 
 	return diff
