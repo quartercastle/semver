@@ -296,7 +296,25 @@ func TestCompare(t *testing.T) {
 			"changing internal receiver type to exported",
 			[]string{"func (*foo) Bar()"},
 			[]string{"func (*Foo) Bar()"},
+			Minor,
+		},
+		{
+			"equal callback function argument",
+			[]string{"func Foo(func (int))"},
+			[]string{"func Foo(func (int))"},
 			Patch,
+		},
+		{
+			"changing callback function arguments",
+			[]string{"func Foo(func(string))"},
+			[]string{"func Foo(func(int))"},
+			Major,
+		},
+		{
+			"change of type in map argument",
+			[]string{"func Foo(map[string]string)"},
+			[]string{"func Foo(map[string]int)"},
+			Major,
 		},
 	}
 

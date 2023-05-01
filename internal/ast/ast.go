@@ -192,7 +192,25 @@ func equalExpr(a, b ast.Expr) bool {
 		if v, ok := b.(*ast.ArrayType); ok {
 			return equalExpr(t.Elt, v.Elt)
 		}
+	case *ast.FuncType:
+		if v, ok := b.(*ast.FuncType); ok {
+			return equalFuncType(t, v)
+		}
+	case *ast.MapType:
+		if v, ok := b.(*ast.MapType); ok {
+			return equalExpr(t.Key, v.Key) && equalExpr(t.Value, v.Value)
+		}
+	case *ast.SelectorExpr:
+		if v, ok := b.(*ast.SelectorExpr); ok {
+			return equalIdent(t.Sel, v.Sel)
+		}
+	case *ast.StructType:
+		if v, ok := b.(*ast.StructType); ok {
+			return equalFieldList(t.Fields, v.Fields)
+		}
 	}
+
+	fmt.Printf("DEBUG: %#v\n", a)
 	return fmt.Sprint(a) == fmt.Sprint(b)
 }
 
@@ -236,6 +254,26 @@ func compareFuncDecl(a, b *ast.FuncDecl) Diff {
 
 	if b == nil {
 		a.Body = nil
+
+		if a.Recv != nil {
+			for _, field := range a.Recv.List {
+				// internal receiver, not breaking
+				var name string
+				switch t := field.Type.(type) {
+				case *ast.Ident:
+					name = t.Name
+				case *ast.StarExpr:
+					if v, ok := t.X.(*ast.Ident); ok {
+						name = v.Name
+					}
+				}
+
+				if !ast.IsExported(name) {
+					return diff
+				}
+			}
+		}
+
 		return diff.Add(Change{
 			Type:   Major,
 			Reason: "function has been removed",
@@ -312,18 +350,22 @@ func Compare(previous, latest ast.Node) Diff {
 		return diff
 	}
 
-	if (previous == nil || reflect.ValueOf(previous).IsNil()) && (latest != nil || !reflect.ValueOf(latest).IsNil()) {
-		return diff.Add(Change{
-			Type:   Major,
-			Reason: "removal of package",
-		})
+	if (previous != nil || !reflect.ValueOf(previous).IsNil()) && (latest == nil || reflect.ValueOf(latest).IsNil()) {
+		if v, ok := previous.(*ast.Package); ok {
+			return diff.Add(Change{
+				Type:   Major,
+				Reason: fmt.Sprintf("removal of package %s", v.Name),
+			})
+		}
 	}
 
-	if (previous != nil || !reflect.ValueOf(previous).IsNil()) && (latest == nil || reflect.ValueOf(latest).IsNil()) {
-		return diff.Add(Change{
-			Type:   Minor,
-			Reason: "addition of package",
-		})
+	if (previous == nil || reflect.ValueOf(previous).IsNil()) && (latest != nil || !reflect.ValueOf(latest).IsNil()) {
+		if v, ok := latest.(*ast.Package); ok {
+			return diff.Add(Change{
+				Type:   Minor,
+				Reason: fmt.Sprintf("addition of package %s", v.Name),
+			})
+		}
 	}
 
 	return diff.Merge(compose(previous, latest)(
