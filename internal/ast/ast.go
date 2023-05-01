@@ -210,8 +210,8 @@ func equalExpr(a, b ast.Expr) bool {
 		}
 	}
 
-	fmt.Printf("DEBUG: %#v\n", a)
-	return fmt.Sprint(a) == fmt.Sprint(b)
+	fmt.Printf("DEBUG: %#v -> %#v\n", a, b)
+	return false
 }
 
 func equalField(a, b *ast.Field) bool {

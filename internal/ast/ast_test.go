@@ -149,10 +149,10 @@ func TestCompare(t *testing.T) {
 			Patch,
 		},
 		{
-			"equal spread operator argument",
+			"spread operator argument of different type",
 			[]string{"func Foo(...int)"},
-			[]string{"func Foo(...int)"},
-			Patch,
+			[]string{"func Foo(...string)"},
+			Major,
 		},
 		{
 			"equal method",
@@ -219,6 +219,18 @@ func TestCompare(t *testing.T) {
 			[]string{"func (*Foo) Foo()"},
 			[]string{"func (*Foo) Foo()"},
 			Patch,
+		},
+		{
+			"receiver change from a concrete to a pointer type",
+			[]string{"func (*Foo) Foo()"},
+			[]string{"func (Foo) Foo()"},
+			Major,
+		},
+		{
+			"receiver change from a pointer to a concrete type",
+			[]string{"func (Foo) Foo()"},
+			[]string{"func (*Foo) Foo()"},
+			Major,
 		},
 		{
 			"change of receiver type",
