@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/quartercastle/semver/internal/ast"
 )
@@ -31,6 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	start := time.Now()
 	a := token.NewFileSet()
 	previous, err := parser.ParseDir(a, args[0], func(f fs.FileInfo) bool {
 		return !strings.Contains(f.Name(), "_test.go")
@@ -60,9 +62,15 @@ func main() {
 
 	for _, change := range diff {
 		fmt.Printf("%s: %s\n", change.Type, change.Reason)
+		if change.Previous != nil {
+			fmt.Print("- ")
+		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Previous)
 		if change.Previous != nil {
 			fmt.Println()
+		}
+		if change.Latest != nil {
+			fmt.Print("+ ")
 		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Latest)
 		fmt.Println()
@@ -71,5 +79,5 @@ func main() {
 		}
 	}
 
-	fmt.Println(diff.Type())
+	fmt.Println(diff.Type(), "in:", time.Since(start))
 }

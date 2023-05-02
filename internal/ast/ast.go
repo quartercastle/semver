@@ -246,9 +246,9 @@ func compareFuncDecl(a, b *ast.FuncDecl) Diff {
 	if a == nil {
 		b.Body = nil
 		return diff.Add(Change{
-			Type:     Minor,
-			Reason:   "function has been added",
-			Previous: b,
+			Type:   Minor,
+			Reason: "function has been added",
+			Latest: b,
 		})
 	}
 
@@ -275,9 +275,9 @@ func compareFuncDecl(a, b *ast.FuncDecl) Diff {
 		}
 
 		return diff.Add(Change{
-			Type:   Major,
-			Reason: "function has been removed",
-			Latest: a,
+			Type:     Major,
+			Reason:   "function has been removed",
+			Previous: a,
 		})
 	}
 
