@@ -2,7 +2,7 @@ package ast
 
 import "go/ast"
 
-func newFuncs(node ast.Node) []*ast.FuncDecl {
+func extractFuncs(node ast.Node) []*ast.FuncDecl {
 	result := []*ast.FuncDecl{}
 
 	if node == nil {
@@ -12,19 +12,6 @@ func newFuncs(node ast.Node) []*ast.FuncDecl {
 	ast.Inspect(node, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.FuncDecl:
-			/*if x.Recv != nil {
-				return false
-				if len(x.Recv.List) == 0 {
-					return false
-				}
-				if len(x.Recv.List[0].Names) == 0 {
-					return false
-				}
-				if !ast.IsExported(x.Recv.List[0].Names[0].Name) {
-					return false
-				}
-			}*/
-
 			if !ast.IsExported(x.Name.Name) {
 				return true
 			}
@@ -90,7 +77,7 @@ func compareFuncDecl(a, b *ast.FuncDecl) Diff {
 }
 
 func compareFuncs(a, b Node) Diff {
-	previous, latest := newFuncs(a), newFuncs(b)
+	previous, latest := extractFuncs(a), extractFuncs(b)
 	diff := Diff{}
 
 	match := [][2]*ast.FuncDecl{}

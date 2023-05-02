@@ -328,6 +328,78 @@ func TestCompare(t *testing.T) {
 			[]string{"func Foo(map[string]int)"},
 			Major,
 		},
+		{
+			"function with a chan argument",
+			[]string{"func Foo(chan int)"},
+			[]string{"func Foo(chan int)"},
+			Patch,
+		},
+		{
+			"function with chan arguments of different directions",
+			[]string{"func Foo(chan<- int)"},
+			[]string{"func Foo(<-chan int)"},
+			Major,
+		},
+		{
+			"function with chan arguments of same directions",
+			[]string{"func Foo(<-chan int)"},
+			[]string{"func Foo(<-chan int)"},
+			Patch,
+		},
+		{
+			"function with chan arguments of different types",
+			[]string{"func Foo(chan int)"},
+			[]string{"func Foo(chan string)"},
+			Major,
+		},
+
+		// consts
+		{
+			"exported const with same type",
+			[]string{"const Foo int = iota"},
+			[]string{"const Foo int = iota"},
+			Patch,
+		},
+		{
+			"exported const with inferred type",
+			[]string{"const Foo = iota"},
+			[]string{"const Foo = iota"},
+			Patch,
+		},
+		{
+			"addition of exported const with iota",
+			[]string{"const Foo = iota"},
+			[]string{
+				"const (",
+				"	Foo = iota",
+				"   Bar",
+				")",
+			},
+			Minor,
+		},
+		{
+			"removal of exported const with iota",
+			[]string{
+				"const (",
+				"	Foo = iota",
+				"   Bar",
+				")",
+			},
+			[]string{"const Foo = iota"},
+			Major,
+		},
+		{
+			"exported const of different type",
+			[]string{"const Test int = 0"},
+			[]string{"const Test string = \"\""},
+			Major,
+		},
+		{
+			"ignore internal const",
+			[]string{"const test int = 0"},
+			[]string{"const test string = \"\""},
+			Patch,
+		},
 	}
 
 	for _, c := range tc {

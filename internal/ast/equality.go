@@ -6,11 +6,15 @@ import (
 )
 
 func equalIdent(a, b *ast.Ident) bool {
-	if !equalObject(a.Obj, b.Obj) {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if (a == nil && b != nil) || (a != nil && b == nil) {
 		return false
 	}
 
-	return a.Name == b.Name
+	return a.Name == b.Name && equalObject(a.Obj, b.Obj)
 }
 
 func equalFuncType(a, b *ast.FuncType) bool {
@@ -22,19 +26,9 @@ func equalFuncType(a, b *ast.FuncType) bool {
 		return false
 	}
 
-	if !equalFieldList(a.TypeParams, b.TypeParams) {
-		return false
-	}
-
-	if !equalFieldList(a.Params, b.Params) {
-		return false
-	}
-
-	if !equalFieldList(a.Results, b.Results) {
-		return false
-	}
-
-	return true
+	return equalFieldList(a.TypeParams, b.TypeParams) &&
+		equalFieldList(a.Params, b.Params) &&
+		equalFieldList(a.Results, b.Results)
 }
 
 func equalFieldList(a, b *ast.FieldList) bool {
@@ -80,7 +74,31 @@ func equalObject(a, b *ast.Object) bool {
 		return false
 	}
 
+	if a.Kind == ast.Con && b.Kind == ast.Con {
+		if a.Data.(int) != b.Data.(int) {
+			return false
+		}
+	}
+
 	return a.Kind == b.Kind && a.Name == b.Name
+}
+
+func equalChanType(a, b *ast.ChanType) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if (a == nil && b != nil) || (a != nil && b == nil) {
+		return false
+	}
+
+	return a.Arrow == b.Arrow &&
+		a.Dir == b.Dir &&
+		equalExpr(a.Value, b.Value)
+}
+
+func equalMapType(a, b *ast.MapType) bool {
+	return equalExpr(a.Key, b.Key) && equalExpr(a.Value, b.Value)
 }
 
 func equalExpr(a, b ast.Expr) bool {
@@ -107,7 +125,7 @@ func equalExpr(a, b ast.Expr) bool {
 		}
 	case *ast.MapType:
 		if v, ok := b.(*ast.MapType); ok {
-			return equalExpr(t.Key, v.Key) && equalExpr(t.Value, v.Value)
+			return equalMapType(t, v)
 		}
 	case *ast.SelectorExpr:
 		if v, ok := b.(*ast.SelectorExpr); ok {
@@ -117,10 +135,50 @@ func equalExpr(a, b ast.Expr) bool {
 		if v, ok := b.(*ast.StructType); ok {
 			return equalFieldList(t.Fields, v.Fields)
 		}
+	case *ast.ChanType:
+		if v, ok := b.(*ast.ChanType); ok {
+			return equalChanType(t, v)
+		}
+	case *ast.BasicLit:
+		if v, ok := b.(*ast.BasicLit); ok {
+			return equalBasicLit(t, v)
+		}
 	}
 
 	fmt.Printf("DEBUG: %#v -> %#v\n", a, b)
-	return false
+	return a == b
+}
+
+func equalValueSpec(a, b *ast.ValueSpec) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if (a == nil && b != nil) || (a != nil && b == nil) {
+		return false
+	}
+
+	if len(a.Names) != len(b.Names) {
+		return false
+	}
+
+	for i := range a.Names {
+		if !equalIdent(a.Names[i], b.Names[i]) {
+			return false
+		}
+	}
+
+	if len(a.Values) != len(b.Values) {
+		return false
+	}
+
+	for i := range a.Values {
+		if !equalExpr(a.Values[i], b.Values[i]) {
+			return false
+		}
+	}
+
+	return equalExpr(a.Type, b.Type)
 }
 
 func equalField(a, b *ast.Field) bool {
