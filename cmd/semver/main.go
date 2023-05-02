@@ -63,6 +63,7 @@ func main() {
 	for _, change := range diff {
 		fmt.Printf("%s: %s\n", change.Type, change.Reason)
 		if change.Previous != nil {
+			fmt.Println(a.Position(change.Previous.Pos()))
 			fmt.Print("- ")
 		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Previous)
@@ -70,6 +71,7 @@ func main() {
 			fmt.Println()
 		}
 		if change.Latest != nil {
+			fmt.Println(b.Position(change.Latest.Pos()))
 			fmt.Print("+ ")
 		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Latest)

@@ -158,27 +158,50 @@ func equalValueSpec(a, b *ast.ValueSpec) bool {
 		return false
 	}
 
-	if len(a.Names) != len(b.Names) {
+	return equalIdents(a.Names, b.Names) &&
+		equalExprs(a.Values, b.Values) &&
+		equalExpr(a.Type, b.Type)
+}
+
+func equalExprs(a, b []ast.Expr) bool {
+	if len(a) != len(b) {
 		return false
 	}
 
-	for i := range a.Names {
-		if !equalIdent(a.Names[i], b.Names[i]) {
+	for i := range a {
+		if !equalExpr(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func equalIdents(a, b []*ast.Ident) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if !equalIdent(a[i], b[i]) {
 			return false
 		}
 	}
 
-	if len(a.Values) != len(b.Values) {
+	return true
+}
+
+func equalNames(a, b []*ast.Ident) bool {
+	if len(a) != len(b) {
 		return false
 	}
 
-	for i := range a.Values {
-		if !equalExpr(a.Values[i], b.Values[i]) {
+	for i := range a {
+		if a[i].Name != b[i].Name {
 			return false
 		}
 	}
 
-	return equalExpr(a.Type, b.Type)
+	return true
 }
 
 func equalField(a, b *ast.Field) bool {

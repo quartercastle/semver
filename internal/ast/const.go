@@ -32,7 +32,7 @@ func compareValueSpec(a, b *ast.ValueSpec) Diff {
 	if a == nil && b != nil {
 		return diff.Add(Change{
 			Type:   Minor,
-			Reason: "a constant has been added",
+			Reason: "constant has been added",
 			Latest: b,
 		})
 	}
@@ -40,8 +40,17 @@ func compareValueSpec(a, b *ast.ValueSpec) Diff {
 	if a != nil && b == nil {
 		return diff.Add(Change{
 			Type:     Major,
-			Reason:   "a constant has been removed",
+			Reason:   "constant has been removed",
 			Previous: a,
+		})
+	}
+
+	if !equalValueSpec(a, b) {
+		return diff.Add(Change{
+			Type:     Major,
+			Reason:   "constant has has changed signature",
+			Previous: a,
+			Latest:   b,
 		})
 	}
 
@@ -67,9 +76,10 @@ func compareConsts(a, b ast.Node) Diff {
 				break
 			}
 
-			if equalValueSpec(p, l) {
+			if equalNames(p.Names, l.Names) {
 				match[j][1] = l
 				found = true
+				break
 			}
 		}
 

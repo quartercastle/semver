@@ -362,8 +362,8 @@ func TestCompare(t *testing.T) {
 		},
 		{
 			"exported const with inferred type",
-			[]string{"const Foo = iota"},
-			[]string{"const Foo = iota"},
+			[]string{"const Foo = \"bar\""},
+			[]string{"const Foo = \"bar\""},
 			Patch,
 		},
 		{
@@ -389,7 +389,7 @@ func TestCompare(t *testing.T) {
 			Major,
 		},
 		{
-			"exported const of different type",
+			"change of type for exported const",
 			[]string{"const Test int = 0"},
 			[]string{"const Test string = \"\""},
 			Major,
