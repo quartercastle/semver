@@ -74,11 +74,11 @@ func equalObject(a, b *ast.Object) bool {
 		return false
 	}
 
-	if a.Kind == ast.Con && b.Kind == ast.Con {
+	/*if a.Kind == ast.Con && b.Kind == ast.Con {
 		if a.Data.(int) != b.Data.(int) {
 			return false
 		}
-	}
+	}*/
 
 	return a.Kind == b.Kind && a.Name == b.Name
 }
@@ -143,10 +143,27 @@ func equalExpr(a, b ast.Expr) bool {
 		if v, ok := b.(*ast.BasicLit); ok {
 			return equalBasicLit(t, v)
 		}
+	case *ast.CompositeLit:
+		if v, ok := b.(*ast.CompositeLit); ok {
+			return equalCompositeLit(t, v)
+		}
+	case *ast.CallExpr:
+		if v, ok := b.(*ast.CallExpr); ok {
+			return equalCallExpr(t, v)
+		}
+
 	}
 
 	fmt.Printf("DEBUG: %#v -> %#v\n", a, b)
 	return a == b
+}
+
+func equalCallExpr(a, b *ast.CallExpr) bool {
+	return equalExpr(a.Fun, b.Fun) && equalExprs(a.Args, b.Args)
+}
+
+func equalCompositeLit(a, b *ast.CompositeLit) bool {
+	return equalExpr(a.Type, b.Type) && equalExprs(a.Elts, b.Elts)
 }
 
 func equalValueSpec(a, b *ast.ValueSpec) bool {

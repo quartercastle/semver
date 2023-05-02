@@ -389,6 +389,17 @@ func TestCompare(t *testing.T) {
 			Major,
 		},
 		{
+			"changing order of iota const",
+			[]string{"const Foo = iota"},
+			[]string{
+				"const (",
+				"	Bar = iota",
+				"   Foo",
+				")",
+			},
+			Major,
+		},
+		{
 			"change of type for exported const",
 			[]string{"const Test int = 0"},
 			[]string{"const Test string = \"\""},

@@ -81,5 +81,5 @@ func main() {
 		}
 	}
 
-	fmt.Println(diff.Type(), "in:", time.Since(start))
+	fmt.Println(diff.Type(), time.Since(start))
 }
