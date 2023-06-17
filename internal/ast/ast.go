@@ -51,5 +51,6 @@ func Compare(previous, latest ast.Node) Diff {
 		comparePackage,
 		compareConsts,
 		compareFuncs,
+		compareTypes,
 	))
 }

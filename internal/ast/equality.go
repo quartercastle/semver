@@ -1,7 +1,6 @@
 package ast
 
 import (
-	"fmt"
 	"go/ast"
 )
 
@@ -15,6 +14,20 @@ func equalIdent(a, b *ast.Ident) bool {
 	}
 
 	return a.Name == b.Name && equalObject(a.Obj, b.Obj)
+}
+
+func equalTypeSpec(a, b *ast.TypeSpec) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if (a == nil && b != nil) || (a != nil && b == nil) {
+		return false
+	}
+
+	return equalIdent(a.Name, b.Name) &&
+		equalFieldList(a.TypeParams, b.TypeParams) &&
+		equalExpr(a.Type, b.Type)
 }
 
 func equalFuncType(a, b *ast.FuncType) bool {
@@ -154,7 +167,7 @@ func equalExpr(a, b ast.Expr) bool {
 
 	}
 
-	fmt.Printf("DEBUG: %#v -> %#v\n", a, b)
+	//fmt.Printf("DEBUG: %#v -> %#v\n", a, b)
 	return a == b
 }
 
