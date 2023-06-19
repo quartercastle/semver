@@ -412,6 +412,32 @@ func TestCompare(t *testing.T) {
 			Patch,
 		},
 
+		// var
+		{
+			"exported var with same type",
+			[]string{"var Foo int"},
+			[]string{"var Foo int"},
+			Patch,
+		},
+		{
+			"exported var with inferred type",
+			[]string{"var Foo = \"bar\""},
+			[]string{"var Foo = \"bar\""},
+			Patch,
+		},
+		{
+			"change of type for exported var",
+			[]string{"var Test int = 0"},
+			[]string{"var Test string = \"\""},
+			Major,
+		},
+		{
+			"ignore internal var",
+			[]string{"var test int = 0"},
+			[]string{"var test string = \"\""},
+			Patch,
+		},
+
 		// type spec
 		{
 			"addition of exported type",
