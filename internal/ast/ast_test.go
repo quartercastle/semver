@@ -458,7 +458,7 @@ func TestCompare(t *testing.T) {
 			Major,
 		},
 		{
-			"changing order of fields in struct",
+			"appending fields in struct",
 			[]string{
 				"type Foo struct {",
 				"	Foo int",
@@ -468,11 +468,11 @@ func TestCompare(t *testing.T) {
 			[]string{
 				"type Foo struct {",
 				"	Foo int",
+				"	Bar int",
 				"	Baz int",
-				"	Bar int",
 				"}",
 			},
-			Major,
+			Minor,
 		},
 		{
 			"changing order of fields in struct",
@@ -491,6 +491,126 @@ func TestCompare(t *testing.T) {
 			},
 			Major,
 		},
+		{
+			"addition of type aliasing",
+			[]string{
+				"type Foo struct {",
+				"	Baz int",
+				"}",
+			},
+			[]string{
+				"type Bar struct {",
+				"	Baz int",
+				"}",
+				"type Foo = Bar",
+			},
+			Minor,
+		},
+		{
+			"type aliasing signatur change",
+			[]string{
+				"type Foo struct {",
+				"	Baz int",
+				"}",
+			},
+			[]string{
+				"type Bar struct {",
+				"	Baz int",
+				"   Foo int",
+				"}",
+				"type Foo = Bar",
+			},
+			Minor,
+		},
+		{
+			"type aliasing both ways",
+			[]string{
+				"type Foo struct {",
+				"	Baz int",
+				"}",
+				"type Bar = Foo",
+			},
+			[]string{
+				"type Bar struct {",
+				"	Baz int",
+				"}",
+				"type Foo = Bar",
+			},
+			Patch,
+		},
+		{
+			"removal of type aliasing",
+			[]string{
+				"type Foo struct {",
+				"	Baz int",
+				"}",
+				"type Bar = Foo",
+			},
+			[]string{
+				"type Bar struct {",
+				"	Baz int",
+				"}",
+			},
+			Major,
+		},
+		{
+			"equal interface",
+			[]string{
+				"type Foo interface {",
+				"	Bar()",
+				"}",
+			},
+			[]string{
+				"type Foo interface {",
+				"	Bar()",
+				"}",
+			},
+			Patch,
+		},
+		{
+			"addition of method to interface",
+			[]string{
+				"type Foo interface {",
+				"	Bar()",
+				"}",
+			},
+			[]string{
+				"type Foo interface {",
+				"	Bar()",
+				"	Baz()",
+				"}",
+			},
+			Major,
+		},
+		{
+			"removal of method to interface",
+			[]string{
+				"type Foo interface {",
+				"	Bar()",
+				"	Baz()",
+				"}",
+			},
+			[]string{
+				"type Foo interface {",
+				"	Bar()",
+				"}",
+			},
+			Major,
+		},
+		{
+			"change of method signatur in interface",
+			[]string{
+				"type Foo interface {",
+				"	Bar(int)",
+				"}",
+			},
+			[]string{
+				"type Foo interface {",
+				"	Bar(string)",
+				"}",
+			},
+			Major,
+		},
 	}
 
 	for _, c := range tc {
@@ -503,8 +623,9 @@ func TestCompare(t *testing.T) {
 
 			if actual := Compare(previous, latest); actual.Type() != c.expected {
 				t.Errorf(
-					"expected difference of %s; got %s",
+					"expected difference of %s; got %s\nreason: %s",
 					c.expected, actual.Type(),
+					actual[len(actual)-1].Reason,
 				)
 			}
 		})

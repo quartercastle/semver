@@ -16,6 +16,29 @@ func equalIdent(a, b *ast.Ident) bool {
 	return a.Name == b.Name && equalObject(a.Obj, b.Obj)
 }
 
+func aliasResolver(a, b *ast.TypeSpec) (v, s *ast.TypeSpec, alias bool) {
+	if v, ok := a.Type.(*ast.Ident); ok {
+		if v.Obj == nil {
+			return a, b, true
+		}
+		if s, ok := v.Obj.Decl.(*ast.TypeSpec); ok {
+			return s, b, true
+		}
+	}
+
+	if v, ok := b.Type.(*ast.Ident); ok {
+		if v.Obj == nil {
+			return a, b, true
+		}
+
+		if s, ok := v.Obj.Decl.(*ast.TypeSpec); ok {
+			return a, s, true
+		}
+	}
+
+	return a, b, false
+}
+
 func equalTypeSpec(a, b *ast.TypeSpec) bool {
 	if a == nil && b == nil {
 		return true
@@ -25,9 +48,38 @@ func equalTypeSpec(a, b *ast.TypeSpec) bool {
 		return false
 	}
 
+	a, b, alias := aliasResolver(a, b)
+
+	if alias {
+		return equalFieldList(a.TypeParams, b.TypeParams) &&
+			equalExpr(a.Type, b.Type)
+	}
+
 	return equalIdent(a.Name, b.Name) &&
 		equalFieldList(a.TypeParams, b.TypeParams) &&
 		equalExpr(a.Type, b.Type)
+}
+
+func appendedFieldList(a, b *ast.FieldList) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if (a == nil && b != nil) || (a != nil && b == nil) {
+		return false
+	}
+
+	if len(a.List) > len(b.List) {
+		return false
+	}
+
+	for i := range a.List {
+		if !equalField(a.List[i], b.List[i]) || !equalNames(a.List[i].Names, b.List[i].Names) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func equalFuncType(a, b *ast.FuncType) bool {
@@ -160,11 +212,14 @@ func equalExpr(a, b ast.Expr) bool {
 		if v, ok := b.(*ast.CompositeLit); ok {
 			return equalCompositeLit(t, v)
 		}
+	case *ast.InterfaceType:
+		if v, ok := b.(*ast.InterfaceType); ok {
+			return equalFieldList(t.Methods, v.Methods)
+		}
 	case *ast.CallExpr:
 		if v, ok := b.(*ast.CallExpr); ok {
 			return equalCallExpr(t, v)
 		}
-
 	}
 
 	//fmt.Printf("DEBUG: %#v -> %#v\n", a, b)

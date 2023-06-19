@@ -32,7 +32,7 @@ func diffValueSpec(a, b *ast.ValueSpec) Diff {
 	if a == nil && b != nil {
 		return diff.Add(Change{
 			Type:   Minor,
-			Reason: "constant has been added",
+			Reason: "value spec has been added",
 			Latest: b,
 		})
 	}
@@ -40,7 +40,7 @@ func diffValueSpec(a, b *ast.ValueSpec) Diff {
 	if a != nil && b == nil {
 		return diff.Add(Change{
 			Type:     Major,
-			Reason:   "constant has been removed",
+			Reason:   "value spec has been removed",
 			Previous: a,
 		})
 	}
@@ -48,7 +48,7 @@ func diffValueSpec(a, b *ast.ValueSpec) Diff {
 	if !equalValueSpec(a, b) {
 		return diff.Add(Change{
 			Type:     Major,
-			Reason:   "constant has has changed signature",
+			Reason:   "value spec has changed signature",
 			Previous: a,
 			Latest:   b,
 		})
