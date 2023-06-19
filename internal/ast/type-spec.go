@@ -25,7 +25,7 @@ func extractTypeSpec(node ast.Node) []*ast.TypeSpec {
 	return result
 }
 
-func compareTypeSpec(a, b *ast.TypeSpec) Diff {
+func diffTypeSpec(a, b *ast.TypeSpec) Diff {
 	var diff Diff
 	if a == nil && b != nil {
 		return diff.Add(Change{
@@ -55,7 +55,7 @@ func compareTypeSpec(a, b *ast.TypeSpec) Diff {
 	return diff
 }
 
-func compareTypes(a, b ast.Node) Diff {
+func compareTypeSpec(a, b ast.Node) Diff {
 	previous, latest := extractTypeSpec(a), extractTypeSpec(b)
 	var diff Diff
 
@@ -88,7 +88,7 @@ func compareTypes(a, b ast.Node) Diff {
 
 	for _, m := range match {
 		p, l := m[0], m[1]
-		diff = diff.Merge(compareTypeSpec(p, l))
+		diff = diff.Merge(diffTypeSpec(p, l))
 	}
 
 	return diff

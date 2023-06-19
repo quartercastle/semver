@@ -448,6 +448,23 @@ func TestCompare(t *testing.T) {
 			},
 			Major,
 		},
+		{
+			"changing order of fields in struct",
+			[]string{
+				"type Foo struct {",
+				"	Foo int",
+				"	Bar int",
+				"}",
+			},
+			[]string{
+				"type Foo struct {",
+				"	Foo int",
+				"	Baz int",
+				"	Bar int",
+				"}",
+			},
+			Major,
+		},
 	}
 
 	for _, c := range tc {

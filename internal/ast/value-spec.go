@@ -4,7 +4,7 @@ import (
 	"go/ast"
 )
 
-func extractConsts(node ast.Node) []*ast.ValueSpec {
+func extractValueSpec(node ast.Node) []*ast.ValueSpec {
 	result := []*ast.ValueSpec{}
 
 	if node == nil {
@@ -27,7 +27,7 @@ func extractConsts(node ast.Node) []*ast.ValueSpec {
 	return result
 }
 
-func compareValueSpec(a, b *ast.ValueSpec) Diff {
+func diffValueSpec(a, b *ast.ValueSpec) Diff {
 	var diff Diff
 	if a == nil && b != nil {
 		return diff.Add(Change{
@@ -57,8 +57,8 @@ func compareValueSpec(a, b *ast.ValueSpec) Diff {
 	return diff
 }
 
-func compareConsts(a, b ast.Node) Diff {
-	previous, latest := extractConsts(a), extractConsts(b)
+func compareValueSpec(a, b ast.Node) Diff {
+	previous, latest := extractValueSpec(a), extractValueSpec(b)
 	var diff Diff
 
 	match := [][2]*ast.ValueSpec{}
@@ -90,7 +90,7 @@ func compareConsts(a, b ast.Node) Diff {
 
 	for _, m := range match {
 		p, l := m[0], m[1]
-		diff = diff.Merge(compareValueSpec(p, l))
+		diff = diff.Merge(diffValueSpec(p, l))
 	}
 
 	return diff

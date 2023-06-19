@@ -49,8 +49,8 @@ func Compare(previous, latest ast.Node) Diff {
 
 	return diff.Merge(compose(previous, latest)(
 		comparePackage,
-		compareConsts,
-		compareFuncs,
-		compareTypes,
+		compareValueSpec,
+		compareFuncDecl,
+		compareTypeSpec,
 	))
 }
