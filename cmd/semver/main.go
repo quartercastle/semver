@@ -92,7 +92,7 @@ func main() {
 			buffer := new(bytes.Buffer)
 			printer.Fprint(buffer, token.NewFileSet(), change.Previous)
 			printer.Fprint(buffer, token.NewFileSet(), change.Latest)
-			if !strings.Contains(string(buffer.Bytes()), grep) {
+			if !strings.Contains(buffer.String(), grep) {
 				continue
 			}
 		}
