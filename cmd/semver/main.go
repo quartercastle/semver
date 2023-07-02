@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"flag"
 	"fmt"
 	"go/parser"
 	"go/printer"
@@ -24,8 +26,21 @@ func merge(a, b map[string]*ast.Package) map[string]struct{} {
 	return result
 }
 
+var (
+	filter  string
+	grep    string
+	explain bool
+)
+
+func init() {
+	flag.BoolVar(&explain, "explain", false, "explain reason behind decision")
+	flag.StringVar(&filter, "filter", "", "filter between changes: patch, minor, major")
+	flag.StringVar(&grep, "grep", "", "grep output")
+}
+
 func main() {
-	args := os.Args[1:]
+	flag.Parse()
+	args := flag.Args()
 
 	if len(args) != 2 {
 		fmt.Fprintln(os.Stderr, "invalid arguments")
@@ -33,6 +48,7 @@ func main() {
 	}
 
 	start := time.Now()
+
 	a := token.NewFileSet()
 	previous, err := parser.ParseDir(a, args[0], func(f fs.FileInfo) bool {
 		return !strings.Contains(f.Name(), "_test.go")
@@ -60,10 +76,30 @@ func main() {
 		diff = diff.Merge(ast.Compare(previous[pkg], latest[pkg]))
 	}
 
+	if !explain {
+		fmt.Println(diff.Type(), time.Since(start))
+		os.Exit(0)
+	}
+
 	for _, change := range diff {
+		if filter != "" {
+			if change.Type.String() != strings.ToUpper(filter) {
+				continue
+			}
+		}
+
+		if grep != "" {
+			buffer := new(bytes.Buffer)
+			printer.Fprint(buffer, token.NewFileSet(), change.Previous)
+			printer.Fprint(buffer, token.NewFileSet(), change.Latest)
+			if !strings.Contains(string(buffer.Bytes()), grep) {
+				continue
+			}
+		}
+
 		fmt.Printf("%s: %s\n", change.Type, change.Reason)
+
 		if change.Previous != nil {
-			fmt.Println(a.Position(change.Previous.Pos()))
 			fmt.Print("- ")
 		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Previous)
@@ -71,7 +107,6 @@ func main() {
 			fmt.Println()
 		}
 		if change.Latest != nil {
-			fmt.Println(b.Position(change.Latest.Pos()))
 			fmt.Print("+ ")
 		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Latest)

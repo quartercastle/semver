@@ -66,16 +66,6 @@ func diffTypeSpec(a, b *ast.TypeSpec) Diff {
 					Latest:   &c,
 				})
 			}
-
-			if !equalFieldList(a.TypeParams, b.TypeParams) || !equalExpr(a.Type, b.Type) {
-				return diff.Add(Change{
-					Type:     Major,
-					Reason:   "struct alias has changed",
-					Previous: a,
-					Latest:   b,
-				})
-			}
-
 		}
 	}
 
@@ -89,43 +79,6 @@ func diffTypeSpec(a, b *ast.TypeSpec) Diff {
 	}
 
 	return diff
-
-	/*	if v, ok := a.Type.(*ast.Ident); ok && v.Obj != nil {
-			if s, ok := v.Obj.Decl.(*ast.TypeSpec); ok {
-				if !equalExpr(s.Type, b.Type) {
-					return diff.Add(Change{
-						Type:     Major,
-						Reason:   "type spec alias has changed signature",
-						Previous: s,
-						Latest:   b,
-					})
-
-				}
-			}
-		}
-
-		if v, ok := b.Type.(*ast.Ident); ok && v.Obj != nil {
-			if s, ok := v.Obj.Decl.(*ast.TypeSpec); ok {
-				if !equalExpr(a.Type, s.Type) {
-					return diff.Add(Change{
-						Type:     Major,
-						Reason:   "type spec alias has changed signature",
-						Previous: a,
-						Latest:   s,
-					})
-
-				}
-			}
-		}*/
-
-	/*if !equalTypeSpec(a, b) {
-		return diff.Add(Change{
-			Type:     Major,
-			Reason:   "type spec has changed signature",
-			Previous: a,
-			Latest:   b,
-		})
-	}*/
 }
 
 func compareTypeSpec(a, b ast.Node) Diff {
