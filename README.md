@@ -19,10 +19,12 @@ categoriesed.
 ### How can we improve
 There are two aspects in doing semantic versioning the first is structural
 and the second is behavioural.
+
 Structural change can be detected by comparing the abstract syntax three (ast) 
 of an earlier version with latest version. By doing this it is possible to
 detect if the latest version contain structural changes and to categorize 
 them as either a patch, minor or major change.
+
 Behavioural change is done by running previous versions test suite
 against the latest version. It is important to mention that 
 the behavioural part of this project is only as good as its unit tests and
