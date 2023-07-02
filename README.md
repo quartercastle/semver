@@ -31,7 +31,7 @@ coverage to verify the behavioural aspects hasn't changed between versions.
 
 ### Install
 Install latest version of semver.
-```go
+```sh
 go install github.com/quartercastle/semver
 ```
 
