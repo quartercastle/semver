@@ -32,7 +32,7 @@ coverage to verify the behavioural aspects hasn't changed between versions.
 ### Install
 Install latest version of semver.
 ```sh
-go install github.com/quartercastle/semver
+go install github.com/quartercastle/semver/cmd/semver
 ```
 
 ### Usage
