@@ -382,6 +382,22 @@ func TestCompare(t *testing.T) {
 			"exported const inferred type",
 			[]string{
 				"const (",
+				"	Foo = 1",
+				"	Bar = 1.0",
+				")",
+			},
+			[]string{
+				"const (",
+				"	Foo int = 1",
+				"	Bar float64 = 1.0",
+				")",
+			},
+			Patch,
+		},
+		{
+			"exported const inferred type",
+			[]string{
+				"const (",
 				"	Foo int = 1",
 				"	Bar     = 1",
 				")",
@@ -530,6 +546,40 @@ func TestCompare(t *testing.T) {
 				"}",
 			},
 			Major,
+		},
+		{
+			"addition of private field",
+			[]string{
+				"type Foo struct {",
+				"	Foo int",
+				"	Bar int",
+				"}",
+			},
+			[]string{
+				"type Foo struct {",
+				"	Foo int",
+				"	baz int",
+				"	Bar int",
+				"}",
+			},
+			Patch,
+		},
+		{
+			"removal of private field",
+			[]string{
+				"type Foo struct {",
+				"	Foo int",
+				"	baz int",
+				"	Bar int",
+				"}",
+			},
+			[]string{
+				"type Foo struct {",
+				"	Foo int",
+				"	Bar int",
+				"}",
+			},
+			Patch,
 		},
 		{
 			"addition of type aliasing",

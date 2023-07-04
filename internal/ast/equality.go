@@ -60,6 +60,15 @@ func equalTypeSpec(a, b *ast.TypeSpec) bool {
 		equalExpr(a.Type, b.Type)
 }
 
+func isExported(idents ...*ast.Ident) bool {
+	for _, ident := range idents {
+		if ast.IsExported(ident.Name) {
+			return true
+		}
+	}
+	return false
+}
+
 func appendedFieldList(a, b *ast.FieldList) bool {
 	if a == nil && b == nil {
 		return true

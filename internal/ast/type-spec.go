@@ -25,6 +25,37 @@ func extractTypeSpec(node ast.Node) []*ast.TypeSpec {
 	return result
 }
 
+func exportedTypeSpec(spec *ast.TypeSpec) *ast.TypeSpec {
+	if spec == nil {
+		return nil
+	}
+
+	s, ok := spec.Type.(*ast.StructType)
+
+	if !ok {
+		return spec
+	}
+
+	t := &ast.StructType{
+		Fields: &ast.FieldList{},
+	}
+
+	for _, field := range s.Fields.List {
+		if isExported(field.Names...) {
+			t.Fields.List = append(t.Fields.List, field)
+		}
+	}
+
+	exported := &ast.TypeSpec{
+		Name:       spec.Name,
+		Assign:     spec.Assign,
+		TypeParams: spec.TypeParams,
+		Type:       t,
+	}
+
+	return exported
+}
+
 func diffTypeSpec(a, b *ast.TypeSpec) Diff {
 	var diff Diff
 	if a == nil && b != nil {
@@ -45,8 +76,7 @@ func diffTypeSpec(a, b *ast.TypeSpec) Diff {
 
 	a, b, alias := aliasResolver(a, b)
 
-	switch t := a.Type.(type) {
-	case *ast.StructType:
+	if t, ok := a.Type.(*ast.StructType); ok {
 		if v, ok := b.Type.(*ast.StructType); ok {
 			if equalFieldList(t.Fields, v.Fields) {
 				// nothing changed
@@ -114,7 +144,10 @@ func compareTypeSpec(a, b ast.Node) Diff {
 
 	for _, m := range match {
 		p, l := m[0], m[1]
-		diff = diff.Merge(diffTypeSpec(p, l))
+		diff = diff.Merge(diffTypeSpec(
+			exportedTypeSpec(p),
+			exportedTypeSpec(l),
+		))
 	}
 
 	return diff
