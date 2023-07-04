@@ -9,13 +9,14 @@ import (
 	"go/token"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/quartercastle/semver/internal/ast"
 )
 
-func merge(a, b map[string]*ast.Package) map[string]struct{} {
+func merge[T any](a, b map[string]T) map[string]struct{} {
 	result := map[string]struct{}{}
 	for k := range a {
 		result[k] = struct{}{}
@@ -38,33 +39,83 @@ func init() {
 	flag.StringVar(&grep, "grep", "", "grep output")
 }
 
-func main() {
-	flag.Parse()
-	args := flag.Args()
-
-	if len(args) != 2 {
-		fmt.Fprintln(os.Stderr, "invalid arguments")
-		os.Exit(1)
+func walk(origin, target string) (ast.Diff, error) {
+	ignore := map[string]struct{}{
+		".git":    {},
+		".github": {},
 	}
 
-	start := time.Now()
+	previous := map[string]struct{}{}
+	a, err := os.ReadDir(origin)
 
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	for _, entry := range a {
+		if !entry.IsDir() {
+			continue
+		}
+
+		previous[entry.Name()] = struct{}{}
+	}
+
+	latest := map[string]struct{}{}
+	b, err := os.ReadDir(target)
+
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	for _, entry := range b {
+		if !entry.IsDir() {
+			continue
+		}
+
+		latest[entry.Name()] = struct{}{}
+	}
+
+	packages := merge(previous, latest)
+
+	var diff ast.Diff
+	for pkg := range packages {
+		if _, ok := ignore[pkg]; ok {
+			continue
+		}
+
+		d, err := walk(
+			filepath.Join(origin, pkg),
+			filepath.Join(target, pkg),
+		)
+
+		diff = diff.Merge(d)
+
+		if err != nil {
+			return diff, err
+		}
+	}
+
+	d, err := compare(origin, target)
+	return diff.Merge(d), err
+}
+
+func compare(origin, target string) (ast.Diff, error) {
 	a := token.NewFileSet()
-	previous, err := parser.ParseDir(a, args[0], func(f fs.FileInfo) bool {
+	previous, err := parser.ParseDir(a, origin, func(f fs.FileInfo) bool {
 		return !strings.Contains(f.Name(), "_test.go")
 	}, 0)
 
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
 	b := token.NewFileSet()
-	latest, err := parser.ParseDir(b, args[1], func(f fs.FileInfo) bool {
+	latest, err := parser.ParseDir(b, target, func(f fs.FileInfo) bool {
 		return !strings.Contains(f.Name(), "_test.go")
 	}, 0)
 
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -77,8 +128,7 @@ func main() {
 	}
 
 	if !explain {
-		fmt.Println(diff.Type(), time.Since(start))
-		os.Exit(0)
+		return diff, nil
 	}
 
 	for _, change := range diff {
@@ -100,6 +150,7 @@ func main() {
 		fmt.Printf("%s: %s\n", change.Type, change.Reason)
 
 		if change.Previous != nil {
+			fmt.Println(a.Position(change.Previous.Pos()))
 			fmt.Print("- ")
 		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Previous)
@@ -107,6 +158,7 @@ func main() {
 			fmt.Println()
 		}
 		if change.Latest != nil {
+			fmt.Println(b.Position(change.Latest.Pos()))
 			fmt.Print("+ ")
 		}
 		printer.Fprint(os.Stdout, token.NewFileSet(), change.Latest)
@@ -116,5 +168,23 @@ func main() {
 		}
 	}
 
+	return diff, nil
+}
+
+func main() {
+	flag.Parse()
+	args := flag.Args()
+
+	if len(args) != 2 {
+		fmt.Fprintln(os.Stderr, "invalid arguments")
+		os.Exit(1)
+	}
+
+	start := time.Now()
+	diff, err := walk(args[0], args[1])
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	fmt.Println(diff.Type(), time.Since(start))
 }

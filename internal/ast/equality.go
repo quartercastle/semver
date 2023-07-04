@@ -220,10 +220,40 @@ func equalExpr(a, b ast.Expr) bool {
 		if v, ok := b.(*ast.CallExpr); ok {
 			return equalCallExpr(t, v)
 		}
+	case *ast.BinaryExpr:
+		if v, ok := b.(*ast.BinaryExpr); ok {
+			return equalBinaryExpr(t, v)
+		}
+	case *ast.UnaryExpr:
+		if v, ok := b.(*ast.UnaryExpr); ok {
+			return equalUnaryExpr(t, v)
+		}
+	case *ast.KeyValueExpr:
+		if v, ok := b.(*ast.KeyValueExpr); ok {
+			return equalKeyValueExpr(t, v)
+		}
+	case *ast.ParenExpr:
+		if v, ok := b.(*ast.ParenExpr); ok {
+			return equalExpr(t.X, v.X)
+		}
 	}
 
-	//fmt.Printf("DEBUG: %#v -> %#v\n", a, b)
+	/*if a != nil && b != nil {
+		fmt.Printf("DEBUG: %#v -> %#v\n", a, b)
+	}*/
 	return a == b
+}
+
+func equalKeyValueExpr(a, b *ast.KeyValueExpr) bool {
+	return equalExpr(a.Key, b.Key) && equalExpr(a.Value, b.Value)
+}
+
+func equalUnaryExpr(a, b *ast.UnaryExpr) bool {
+	return equalExpr(a.X, b.X)
+}
+
+func equalBinaryExpr(a, b *ast.BinaryExpr) bool {
+	return equalExpr(a.X, b.X) && equalExpr(a.Y, b.Y)
 }
 
 func equalCallExpr(a, b *ast.CallExpr) bool {
@@ -244,8 +274,7 @@ func equalValueSpec(a, b *ast.ValueSpec) bool {
 	}
 
 	return equalIdents(a.Names, b.Names) &&
-		equalExprs(a.Values, b.Values) &&
-		equalExpr(a.Type, b.Type)
+		equalExprs(a.Values, b.Values)
 }
 
 func equalExprs(a, b []ast.Expr) bool {

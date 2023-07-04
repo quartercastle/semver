@@ -42,6 +42,21 @@ func compose(previous, latest Node) func(comparators ...comparator) Diff {
 
 func Compare(previous, latest ast.Node) Diff {
 	diff := Diff{}
+	if (previous == nil || reflect.ValueOf(previous).IsNil()) && (latest != nil || !reflect.ValueOf(latest).IsNil()) {
+		return diff.Add(Change{
+			Type:   Minor,
+			Reason: "package has been added",
+			Latest: latest,
+		})
+	}
+
+	if (previous != nil || !reflect.ValueOf(previous).IsNil()) && (latest == nil || reflect.ValueOf(latest).IsNil()) {
+		return diff.Add(Change{
+			Type:     Major,
+			Reason:   "package has been removed",
+			Previous: previous,
+		})
+	}
 
 	if (previous == nil || reflect.ValueOf(previous).IsNil()) && (latest == nil || reflect.ValueOf(latest).IsNil()) {
 		return diff

@@ -361,6 +361,46 @@ func TestCompare(t *testing.T) {
 			Patch,
 		},
 		{
+			"exported const with binary expression",
+			[]string{"const Foo = iota+50"},
+			[]string{"const Foo = iota+50"},
+			Patch,
+		},
+		{
+			"exported const with unary expression",
+			[]string{"const Foo = -1"},
+			[]string{"const Foo = -1"},
+			Patch,
+		},
+		{
+			"exported var map",
+			[]string{"var Foo = map[string]int{\"Foo\": 1}"},
+			[]string{"var Foo = map[string]int{\"Foo\": 1}"},
+			Patch,
+		},
+		{
+			"exported const inferred type",
+			[]string{
+				"const (",
+				"	Foo int = 1",
+				"	Bar     = 1",
+				")",
+			},
+			[]string{
+				"const (",
+				"	Foo int = 1",
+				"	Bar int = 1",
+				")",
+			},
+			Patch,
+		},
+		{
+			"exported var paran expr",
+			[]string{"const Foo = (1)"},
+			[]string{"const Foo = (1)"},
+			Patch,
+		},
+		{
 			"exported const with inferred type",
 			[]string{"const Foo = \"bar\""},
 			[]string{"const Foo = \"bar\""},
