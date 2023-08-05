@@ -15,7 +15,7 @@ const (
 	CacheIsNotSetup        Error = "cache is not setup"
 	FailedAtSettingUpCache Error = "failed at setting up cache"
 	RepoNotInCache         Error = "repository not in cache"
-	VersionNotInCache      Error = "version not in cache"
+	RefNotInCache          Error = "reference not in cache"
 )
 
 type Error string
@@ -25,16 +25,16 @@ func (e Error) Error() string {
 }
 
 type repo struct {
-	hash     string
-	versions map[string]struct{}
+	hash       string
+	references map[string]struct{}
 }
 
-func (r repo) Add(version string) {
-	r.versions[version] = struct{}{}
+func (r repo) Add(reference string) {
+	r.references[reference] = struct{}{}
 }
 
-func (r repo) Has(version string) bool {
-	_, found := r.versions[version]
+func (r repo) Has(reference string) bool {
+	_, found := r.references[reference]
 	return found
 }
 
@@ -58,7 +58,7 @@ func Setup(path string) error {
 	return nil
 }
 
-func Add(path, version string) (string, error) {
+func Add(path, reference string) (string, error) {
 	if cache == nil {
 		return "", CacheIsNotSetup
 	}
@@ -74,37 +74,37 @@ func Add(path, version string) (string, error) {
 		}
 	}
 
-	if !cache[path].Has(version) {
-		cache[path].Add(version)
-		if err := os.Mkdir(filepath.Join(dir, hash, version), 0755); err != nil {
+	if !cache[path].Has(reference) {
+		cache[path].Add(reference)
+		if err := os.Mkdir(filepath.Join(dir, hash, reference), 0755); err != nil {
 			return "", err
 		}
 	}
-	return filepath.Join(dir, hash, version), nil
+	return filepath.Join(dir, hash, reference), nil
 }
 
-func Get(path, version string) (string, error) {
+func Get(path, reference string) (string, error) {
 	repo, ok := cache[path]
 
 	if !ok {
 		return "", RepoNotInCache
 	}
 
-	if !repo.Has(version) {
-		return "", VersionNotInCache
+	if !repo.Has(reference) {
+		return "", RefNotInCache
 	}
 
-	return filepath.Join(dir, repo.hash, version), nil
+	return filepath.Join(dir, repo.hash, reference), nil
 }
 
-func Has(path, version string) bool {
+func Has(path, reference string) bool {
 	repo, ok := cache[path]
 
 	if !ok {
 		return false
 	}
 
-	return repo.Has(version)
+	return repo.Has(reference)
 }
 
 func Clean() error {
