@@ -1,6 +1,7 @@
 # semver
 
-> **Note:** This is still under active development and should not be
+> [!IMPORTANT]
+> This is still under active development and should not be
 > considered stable. It's not even semantically versioned yet.
 
 Semver is a project about automating semantic versioning by analysing
