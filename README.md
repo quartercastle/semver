@@ -82,6 +82,8 @@ MAJOR 28.070333ms
 - [ ] Integrate with Git to automatically checkout and cache versions to compare.
 - [ ] Extract test cases from previous versions and run them against the latest
       version.
+- [ ] Better diffs
+- [ ] Better docs explaining why certain changes are breaking.
 
 ### License
 This project is licensed under the [MIT License](LICENSE).
