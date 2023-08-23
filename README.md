@@ -5,17 +5,9 @@
 > considered stable. It's not even semantically versioned yet.
 
 Semver is a project about automating semantic versioning by analysing
-structural  and behavioural aspects of source code.
+structural and behavioural aspects of source code.
 
-Versioning is hard and in many cases ignored as it seems like extra work.
-This is unfortunate as semantic versioning has many benefits in terms of
-dependency management and it is a good way to communicate change to
-dependent projects.
 
-Describe problem of semver today:
-- Manuel process relying on reviewers
-- Error prone
-- No tooling
 <!--There are other ways to tackle and maintain semantic versioning, most are
 based on formatted commit messages, which can be error prone and the
 process is dependent on reviewers too verify that changes are correctly
@@ -30,11 +22,11 @@ of an earlier version with latest version. By doing this it is possible to
 detect if the latest version contain structural changes and to categorize
 them as either a patch, minor or major change.
 
-Behavioural change is done by running previous versions test suite
+Behavioural change can be achieved by running the previous versions test suite
 against the latest version. It is important to mention that
-the behavioural part of this project is only as good as its unit tests and
-coverage. It is up to the maintainer to ensure that there is enough test
-coverage to verify the behavioural aspects hasn't changed between versions.
+the behavioural verification requires a good test suite and coverage.
+It is up to the maintainer to ensure that there is enough test
+coverage to verify that the behavioural aspects hasn't changed between versions.
 
 ### Install
 Install latest version of semver.
@@ -51,9 +43,12 @@ semver --explain examples/v1.0.0 examples/v2.0.0
 ```
 
 ### Next steps
-- [ ] Integrate with Git to automatically checkout versions to compare.
+- [ ] Integrate with Git to automatically checkout and cache versions to compare.
 - [ ] Extract test cases from previous versions and run them against the latest
       version.
+- [ ] Describe why maintaining semver is hard today:
+    - Hard to maintain if a project has many contributers or high commit frequency
+    - Process is often manuel, relying on reviewers or structured commit messages
 
 ### License
 This project is licensed under the [MIT License](LICENSE).
