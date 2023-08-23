@@ -40,7 +40,42 @@ Semver can only do structural change detection at the moment. To use it checkout
 two versions of a project in different folders and use the semver cli to see
 the structural changes between the versions.
 ```sh
-semver --explain examples/v1.0.0 examples/v2.0.0
+semver --explain path/to/v1.0.0 path/to/v2.0.0
+```
+
+Below is an example of the output produced by comparing [v1.4.0](https://github.com/adrianmo/go-nmea/releases/tag/v1.4.0) to the latest
+commit [a60cdb4](https://github.com/adrianmo/go-nmea/commit/a60cdb4c706d731910788de3e609e367e8d78400) of the
+[nmea](https://github.com/adrianmo/go-nmea) parser module for Go.
+
+```sh
+semver --filter major --explain nmea/v1.4.0 nmea/a60cdb4
+```
+
+```txt
+MAJOR: value spec has changed signature
+v1/mtk.go:5:2
+- TypeMTK = "PMTK"
+v2/mtk.go:6:2
++ TypeMTK = "MTK001"
+
+MAJOR: type spec has changed signature
+v1/dbs.go:10:6
+- DBS struct {
+	DepthFeet       float64
+	DepthMeters     float64
+	DepthFathoms    float64
+}
+v2/dbs.go:14:6
++ DBS struct {
+	DepthFeet       float64
+	DepthFeetUnit   string
+	DepthMeters     float64
+	DepthMeterUnit  string
+	DepthFathoms    float64
+	DepthFathomUnit string
+}
+
+MAJOR 28.070333ms
 ```
 
 ### Next steps
