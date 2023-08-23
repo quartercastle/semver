@@ -53,19 +53,19 @@ semver --filter major --explain nmea/v1.4.0 nmea/a60cdb4
 
 ```txt
 MAJOR: value spec has changed signature
-v1/mtk.go:5:2
+nmea/v1.4.0/mtk.go:5:2
 - TypeMTK = "PMTK"
-v2/mtk.go:6:2
+nmea/a60cdb4/mtk.go:6:2
 + TypeMTK = "MTK001"
 
 MAJOR: type spec has changed signature
-v1/dbs.go:10:6
+nmea/v1.4.0/dbs.go:10:6
 - DBS struct {
 	DepthFeet       float64
 	DepthMeters     float64
 	DepthFathoms    float64
 }
-v2/dbs.go:14:6
+nmea/a60cdb4/dbs.go:14:6
 + DBS struct {
 	DepthFeet       float64
 	DepthFeetUnit   string
