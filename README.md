@@ -21,6 +21,8 @@ against the latest version. It is important to mention that
 the behavioural verification requires a good test suite and coverage.
 It is up to the maintainer to ensure that there is enough test
 coverage to verify that the behavioural aspects hasn't changed between versions.
+And even with the best test suite you wont be able to guarentee that it wont be
+breaking be aware of this!
 
 ### Install
 Install latest version of semver.
