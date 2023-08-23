@@ -36,8 +36,9 @@ go install github.com/quartercastle/semver/cmd/semver
 
 ### Usage
 Semver can only do structural change detection at the moment. Checkout two
-versions of a project and use semver like below see the structural changes
-between the versions.
+versions of a project in different folder and use semver to see the structural
+changes between the versions and explain why they are either a minor or major
+change.
 ```sh
 semver --explain examples/v1.0.0 examples/v2.0.0
 ```
