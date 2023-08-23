@@ -9,7 +9,7 @@ structural and behavioural aspects of source code.
 
 ### Problems with maintaining semver today
 TODO: describe why semver can be hard to maintain today.
-- Hard to maintain if a project has many contributers or high commit frequency
+- Hard to maintain if a project has many contributors or high commit frequency
 - Process is often manuel, relying on reviewers or structured commit messages
 
 ### How can we improve
