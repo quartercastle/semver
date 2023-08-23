@@ -7,6 +7,11 @@
 Semver is a project about automating semantic versioning by analysing
 structural and behavioural aspects of source code.
 
+### Problems with maintaining semver today
+TODO: describe why semver can be hard to maintain today.
+- Hard to maintain if a project has many contributers or high commit frequency
+- Process is often manuel, relying on reviewers or structured commit messages
+
 ### How can we improve
 There are two aspects in doing semantic versioning the first is structural
 and the second is behavioural.
@@ -42,9 +47,6 @@ semver --explain examples/v1.0.0 examples/v2.0.0
 - [ ] Integrate with Git to automatically checkout and cache versions to compare.
 - [ ] Extract test cases from previous versions and run them against the latest
       version.
-- [ ] Describe why maintaining semver today is hard:
-    - Hard to maintain if a project has many contributers or high commit frequency
-    - Process is often manuel, relying on reviewers or structured commit messages
 
 ### License
 This project is licensed under the [MIT License](LICENSE).
