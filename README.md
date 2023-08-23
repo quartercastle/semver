@@ -7,12 +7,6 @@
 Semver is a project about automating semantic versioning by analysing
 structural and behavioural aspects of source code.
 
-
-<!--There are other ways to tackle and maintain semantic versioning, most are
-based on formatted commit messages, which can be error prone and the
-process is dependent on reviewers too verify that changes are correctly
-categoriesed. -->
-
 ### How can we improve
 There are two aspects in doing semantic versioning the first is structural
 and the second is behavioural.
@@ -31,14 +25,13 @@ coverage to verify that the behavioural aspects hasn't changed between versions.
 ### Install
 Install latest version of semver.
 ```sh
-go install github.com/quartercastle/semver/cmd/semver
+go install github.com/quartercastle/semver/cmd/semver@latest
 ```
 
 ### Usage
-Semver can only do structural change detection at the moment. Checkout two
-versions of a project in different folder and use semver to see the structural
-changes between the versions and explain why they are either a minor or major
-change.
+Semver can only do structural change detection at the moment. To use it checkout
+two versions of a project in different folders and use the semver cli to see
+the structural changes between the versions.
 ```sh
 semver --explain examples/v1.0.0 examples/v2.0.0
 ```
@@ -47,7 +40,7 @@ semver --explain examples/v1.0.0 examples/v2.0.0
 - [ ] Integrate with Git to automatically checkout and cache versions to compare.
 - [ ] Extract test cases from previous versions and run them against the latest
       version.
-- [ ] Describe why maintaining semver is hard today:
+- [ ] Describe why maintaining semver today is hard:
     - Hard to maintain if a project has many contributers or high commit frequency
     - Process is often manuel, relying on reviewers or structured commit messages
 
